@@ -25,7 +25,7 @@ class Mod implements IPostDBLoadMod {
             obj[key] = val;
         } else {
             for (const [k, v] of Object.entries(val)) {
-                this.setValueRecursive(obj[key], k, v, chain)
+                this.setValueRecursive(obj[key], k, v, chain.slice());
             }
         }
     }
