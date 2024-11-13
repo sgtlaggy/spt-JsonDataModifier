@@ -1,4 +1,4 @@
-# Config Replacer
+# Json Data Modifier
 
 This is mainly to suit my own setup because I symlink game and SPT files into game folders instead of having 40GB taken by each install.
 
