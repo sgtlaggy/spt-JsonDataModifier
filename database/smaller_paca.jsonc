@@ -1,0 +1,12 @@
+{
+  "templates": {
+    "items": {
+      "5648a7494bdc2d9d488b4583": { // paca id
+        "_props": {
+          "Width": 2,
+          "Height": 2
+        }
+      }
+    }
+  }
+}

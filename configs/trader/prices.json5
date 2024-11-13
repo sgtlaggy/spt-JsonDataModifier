@@ -1,0 +1,4 @@
+{
+  // make prices VERY high
+  "traderPriceMultipler": 50,
+}

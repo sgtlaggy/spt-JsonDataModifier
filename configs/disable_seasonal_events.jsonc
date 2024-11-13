@@ -1,0 +1,6 @@
+{
+  "seasonalevents": {
+    // disable automatic seasonal events
+    "enableSeasonalEventDetection": false
+  }
+}

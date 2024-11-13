@@ -1,0 +1,25 @@
+// remove and change a scav case option
+// in 3.10 this would be production.scavRecipes instead of scavcase
+{
+  "scavcase": {
+    "4": null,
+    "3": {
+      "ProductionTime": 40,      // minimum time allowed
+      "Requirements": [
+        {
+          "templateId": "5449016a4bdc2d6f028b456f", /* roubles */
+          "count": 1,
+          "isFunctional": false,
+          "isEncoded": false,
+          "type": "Item"
+        }
+      ],
+      "EndProducts": {
+        "Superrare": {
+          "min": "5",
+          "max": "20"
+        }
+      }
+    }
+  },
+}
