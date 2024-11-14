@@ -1,6 +1,6 @@
 {
-    "version": "2.0.1",
     "name": "JsonDataModifier",
+    "version": "3.0.0",
     "sptVersion": "~3.9",
     "author": "sgtlaggy",
     "contributors": [],
