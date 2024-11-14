@@ -32,7 +32,11 @@ class Mod implements IPostDBLoadMod {
             obj[key] = val;
         } else if (val === null) {
             this.logger.warning(`[JsonDataModifier] Deleting ${entry}`);
-            delete obj[key];
+            if (Array.isArray(obj)) {
+                obj.splice(parseInt(key), 1);
+            } else {
+                delete obj[key];
+            }
         } else if ((typeof val) === "object" && obj[key] === undefined) {
             this.logger.warning(`[JsonDataModifier] Creating ${entry}`);
             obj[key] = val;
