@@ -67,43 +67,39 @@ class Mod implements IPostDBLoadMod {
     // path and name split, which would require `path` anyway.
     protected applyJsonModifications(dir: string, baseObj: object) {
         const dirName = path.basename(dir);
-        fs.readdir(dir, { recursive: true, withFileTypes: true },
-            (_, dirents) => {
-                for (const dirent of dirents) {
-                    const ext = path.extname(dirent.name).toLowerCase();
-                    if (dirent.isDirectory() || !(/\.json[5c]?$/.test(ext))) {
-                        continue;
-                    }
-
-                    const fn = path.join(dirent.path, dirent.name);
-
-                    const location = path.relative(dir, dirent.path).split(path.sep);
-                    if (!location[0]) {
-                        location.splice(0, 1);
-                    }
-
-                    const obj = this.getValueRecursive(baseObj, location);
-
-                    fs.readFile(fn, "utf8", (_, buf) => {
-                        let data: string;
-                        if (ext === ".json") {
-                            data = this.jsonUtil.deserialize(buf);
-                        } else if (ext === ".json5") {
-                            data = this.jsonUtil.deserializeJson5(buf);
-                        } else if (ext === ".jsonc") {
-                            data = this.jsonUtil.deserializeJsonC(buf);
-                        } else { // this shouldn't happen, but just in case
-                            this.logger.warning(`[JsonDataModifier] Invalid extension: ${fn}`);
-                            return;
-                        }
-
-                        for (const [key, val] of Object.entries(data)) {
-                            this.setValueRecursive(obj, key, val, [dirName].concat(location));
-                        }
-                    });
-                }
+        const dirents = fs.readdirSync(dir, {recursive: true, withFileTypes: true});
+        for (const dirent of dirents) {
+            const ext = path.extname(dirent.name).toLowerCase();
+            if (dirent.isDirectory() || !(/\.json[5c]?$/.test(ext))) {
+                continue;
             }
-        );
+
+            const fn = path.join(dirent.path, dirent.name);
+
+            const location = path.relative(dir, dirent.path).split(path.sep);
+            if (!location[0]) {
+                location.splice(0, 1);
+            }
+
+            const obj = this.getValueRecursive(baseObj, location);
+
+            const buffer = fs.readFileSync(fn, "utf8");
+            let data: string;
+            if (ext === ".json") {
+                data = this.jsonUtil.deserialize(buffer);
+            } else if (ext === ".json5") {
+                data = this.jsonUtil.deserializeJson5(buffer);
+            } else if (ext === ".jsonc") {
+                data = this.jsonUtil.deserializeJsonC(buffer);
+            } else { // this shouldn't happen, but just in case
+                this.logger.warning(`[JsonDataModifier] Invalid extension: ${fn}`);
+                return;
+            }
+
+            for (const [key, val] of Object.entries(data)) {
+                this.setValueRecursive(obj, key, val, [dirName].concat(location));
+            }
+        }
     }
 
     public postDBLoad(container: DependencyContainer): void {
