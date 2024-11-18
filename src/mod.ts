@@ -76,7 +76,12 @@ class Mod implements IPostDBLoadMod {
                     }
 
                     const fn = path.join(dirent.path, dirent.name);
+
                     const location = path.relative(dir, dirent.path).split(path.sep);
+                    if (!location[0]) {
+                        location.splice(0, 1);
+                    }
+
                     const obj = this.getValueRecursive(baseObj, location);
 
                     fs.readFile(fn, "utf8", (_, buf) => {
@@ -93,7 +98,7 @@ class Mod implements IPostDBLoadMod {
                         }
 
                         for (const [key, val] of Object.entries(data)) {
-                            this.setValueRecursive(obj, key, val, [].concat(dirName, location));
+                            this.setValueRecursive(obj, key, val, [dirName].concat(location));
                         }
                     });
                 }
