@@ -5,6 +5,7 @@ import { IPostDBLoadMod } from "@spt/models/external/IPostDBLoadMod";
 import { ILogger } from "@spt/models/spt/utils/ILogger";
 import { ConfigServer } from "@spt/servers/ConfigServer";
 import { DatabaseService } from "@spt/services/DatabaseService";
+import { JsonUtil } from "@spt/utils/JsonUtil";
 
 import path from "node:path";
 import fs from "node:fs";
@@ -16,6 +17,7 @@ function isValue(obj: any): boolean {
 
 class Mod implements IPostDBLoadMod {
     protected logger: ILogger;
+    protected jsonUtil: JsonUtil;
 
     // This will set values nested within an object.
     // If the value is "simple", it will be set as-is.
@@ -68,7 +70,8 @@ class Mod implements IPostDBLoadMod {
         fs.readdir(dir, { recursive: true, withFileTypes: true },
             (_, dirents) => {
                 for (const dirent of dirents) {
-                    if (dirent.isDirectory() || (path.extname(dirent.name) !== ".json")) {
+                    const ext = path.extname(dirent.name).toLowerCase();
+                    if (dirent.isDirectory() || !(/\.json[5c]?$/.test(ext))) {
                         continue;
                     }
 
@@ -77,7 +80,18 @@ class Mod implements IPostDBLoadMod {
                     const obj = this.getValueRecursive(baseObj, location);
 
                     fs.readFile(fn, "utf8", (_, buf) => {
-                        const data = JSON.parse(buf);
+                        let data: string;
+                        if (ext === ".json") {
+                            data = this.jsonUtil.deserialize(buf);
+                        } else if (ext === ".json5") {
+                            data = this.jsonUtil.deserializeJson5(buf);
+                        } else if (ext === ".jsonc") {
+                            data = this.jsonUtil.deserializeJsonC(buf);
+                        } else { // this shouldn't happen, but just in case
+                            this.logger.warning(`[JsonDataModifier] Invalid extension: ${fn}`);
+                            return;
+                        }
+
                         for (const [key, val] of Object.entries(data)) {
                             this.setValueRecursive(obj, key, val, [].concat(dirName, location));
                         }
@@ -89,6 +103,8 @@ class Mod implements IPostDBLoadMod {
 
     public postDBLoad(container: DependencyContainer): void {
         this.logger = container.resolve<ILogger>("WinstonLogger");
+        this.jsonUtil = container.resolve<JsonUtil>("JsonUtil");
+
         const configServer = container.resolve<ConfigServer>("ConfigServer");
         const databaseService = container.resolve<DatabaseService>("DatabaseService");
         const db = databaseService.getTables();
