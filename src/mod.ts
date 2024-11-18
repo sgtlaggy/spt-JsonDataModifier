@@ -28,19 +28,36 @@ class Mod implements IPostDBLoadMod {
         chain = chain?.slice() || [];
         chain.push(key);
         const entry = chain.join(".");
+        const current = obj[key];
+        const oldType = typeof current;
+        const newType = typeof val;
 
-        if (isValue(val)) {
-            this.logger.info(`[JsonDataModifier] Setting ${entry} to ${JSON.stringify(val)}`);
-            obj[key] = val;
-        } else if (val === null) {
-            this.logger.warning(`[JsonDataModifier] Deleting ${entry}`);
+        if (val === null) {
+            if (current === undefined) {
+                this.logger.warning(`[JsonDataModifier] Deleting ${entry}, but it was undefined`);
+            } else {
+                this.logger.warning(`[JsonDataModifier] Deleting ${entry}`);
+            }
+
             if (Array.isArray(obj)) {
                 obj.splice(parseInt(key), 1);
             } else {
                 delete obj[key];
             }
-        } else if ((typeof val) === "object" && obj[key] === undefined) {
+            return;
+        } else if (current === undefined) {
             this.logger.warning(`[JsonDataModifier] Creating ${entry}`);
+
+            if ((typeof val) === "object") {
+                obj[key] = val;
+                return;
+            }
+        } else if (oldType !== newType) {
+            this.logger.warning(`[JsonDataModifier] Changing type of ${entry} from ${oldType} to ${newType}`);
+        }
+
+        if (isValue(val)) {
+            this.logger.info(`[JsonDataModifier] Setting ${entry} to ${JSON.stringify(val)}`);
             obj[key] = val;
         } else {
             for (const [k, v] of Object.entries(val)) {
