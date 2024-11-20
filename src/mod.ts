@@ -87,7 +87,7 @@ class Mod implements IPostDBLoadMod {
         const dirents = fs.readdirSync(dir, {recursive: true, withFileTypes: true});
         for (const dirent of dirents) {
             const ext = path.extname(dirent.name).toLowerCase();
-            if (dirent.isDirectory() || !(/\.json[5c]?$/.test(ext))) {
+            if (dirent.isDirectory() || dirent.name.startsWith("_") || !(/\.json[5c]?$/.test(ext))) {
                 continue;
             }
 
