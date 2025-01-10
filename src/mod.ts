@@ -10,6 +10,8 @@ import { JsonUtil } from "@spt/utils/JsonUtil";
 import path from "node:path";
 import fs from "node:fs";
 
+import DEBUG from "../debug.json";
+
 
 function isValue(obj: any): boolean {
     return ["string", "number", "boolean"].includes(typeof obj) || Array.isArray(obj);
@@ -79,12 +81,24 @@ class Mod implements IPostDBLoadMod {
         return this.getValueRecursive(next, keys.slice(1));
     }
 
+    // Build an object structured from list of keys.
+    // ["a", "b", "c"] -> {"a": {"b": {"c": {}}}}
+    protected buildObject(keys: string[]): [object, object] {
+        const obj = {};
+        let current = obj;
+        for (const key of keys) {
+            current[key] = {};
+            current = current[key];
+        }
+        return [obj, current];
+    }
+
     // Using `path` and `fs` instead of SPT's `VFS` here because it allows recursive
     // searching, iteration without generating a full list, and already having file
     // path and name split, which would require `path` anyway.
     protected applyJsonModifications(dir: string, baseObj: object) {
         const dirName = path.basename(dir);
-        const dirents = fs.readdirSync(dir, {recursive: true, withFileTypes: true});
+        const dirents = fs.readdirSync(dir, { recursive: true, withFileTypes: true });
         for (const dirent of dirents) {
             const ext = path.extname(dirent.name).toLowerCase();
             if (dirent.isDirectory() || dirent.name.startsWith("_") || !(/\.json[5c]?$/.test(ext))) {
@@ -135,6 +149,41 @@ class Mod implements IPostDBLoadMod {
         const modDir = path.dirname(__dirname);
         this.applyJsonModifications(path.join(modDir, "configs"), config);
         this.applyJsonModifications(path.join(modDir, "database"), db);
+
+        if (DEBUG.dump.length === 0) {
+            return;
+        }
+
+        // replace : and . in ISO timestamp with _ to be valid folder name on Windows
+        const time = (new Date()).toISOString().replaceAll(/:|\./g, "_");
+        const dumpsDir = path.normalize(path.join(__dirname, "..", "dumps"));
+        const dumpDir = path.join(dumpsDir, time);
+        fs.mkdirSync(dumpDir, { recursive: true });
+
+        this.logger.warning(`[JsonDataModifier] Dumping ${DEBUG.dump.length} config/database chunks`);
+
+        DEBUG.dump.forEach((dataPath: string, index) => {
+            const [section, ...keys] = dataPath.split(".");
+
+            let obj: any;
+            if (section === "configs") {
+                obj = config;
+            } else if (section === "database") {
+                obj = db;
+            } else {
+                this.logger.warning(`[JsonDataModifier] Unknown data section: ${section}`);
+                return;
+            }
+
+            const data = this.getValueRecursive(obj, keys);
+
+            const lastKey = keys.pop();
+            const [out, inner] = this.buildObject(keys);
+            inner[lastKey] = data;
+
+            const dumpName = `${index}-${section}.json`;
+            fs.writeFileSync(path.join(dumpDir, dumpName), JSON.stringify(out, null, 2));
+        });
     }
 }
 

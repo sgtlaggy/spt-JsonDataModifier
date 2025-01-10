@@ -77,3 +77,22 @@ The following example will remove Jaeger's dehydration quest and set the startin
     }
 }
 ```
+
+## Debugging
+
+NOTE: Debugging dumps are made immediately after all changes applied by this mod. Mod load order could affect how true dumps are relative to in-game observations. You will likely need to load this mod last by using a load order editor or renaming it with `z` at the front of the folder name.
+
+Specific sections of the config or database can be dumped to inspect their values at runtime.
+Edit the `debug.json` file and add a dot-separated path to the data you want in the `dump` array. Each path should start with `configs` or `database`.
+For example, the following `debug.json` will dump the settings for the Christmas event and Prapor's assort table.
+
+```json
+{
+  "dump": [
+    "configs.seasonalevents.events.1",
+    "database.traders.54cb50c76803fa8b248b4571.assort"
+  ]
+}
+```
+
+This will create a `dumps` folder and a timestamped folder inside it. The timestamped folder will have a file for each path in the array.
